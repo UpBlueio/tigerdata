@@ -1,0 +1,3 @@
+
+
+docker build . -t upblueio/timescale:20250111
