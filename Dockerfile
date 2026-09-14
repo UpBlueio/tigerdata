@@ -6,6 +6,11 @@
 # =============================================================================
 
 ARG PG_MAJOR=17
+# Pinned explicit patch tag: the floating "${PG_MAJOR}-bookworm" tag stopped
+# tracking patch releases after 17.6 (cloudnative-pg moved to
+# "X.Y-<variant>-<distro>" tags). "standard" is the documented successor to
+# the old plain tags. Bump this alongside PostgreSQL security releases.
+ARG PG_BASE_TAG=17.11-standard-bookworm
 ARG PGVECTOR_VERSION=0.8.6
 ARG PGVECTORSCALE_VERSION=0.9.1
 ARG RUST_VERSION=1.91
@@ -14,7 +19,7 @@ ARG PGRX_VERSION=0.16.1
 # STAGE 1: Build pgvector (C extension)
 # Compiles pgvector from source to produce .so and .sql artifacts.
 # Uses shallow clone (--depth 1) to minimize build layer size.
-FROM ghcr.io/cloudnative-pg/postgresql:${PG_MAJOR}-bookworm AS pgvector-builder
+FROM ghcr.io/cloudnative-pg/postgresql:${PG_BASE_TAG} AS pgvector-builder
 
 ARG PG_MAJOR
 ARG PGVECTOR_VERSION
@@ -80,7 +85,7 @@ RUN cargo pgrx install --pg-config /usr/bin/pg_config
 # STAGE 3: Install TimescaleDB (Bookworm)
 # Installs TimescaleDB extension via apt package manager.
 # TimescaleDB version is determined by the latest available in the apt repository.
-FROM ghcr.io/cloudnative-pg/postgresql:${PG_MAJOR}-bookworm AS timescaledb-builder
+FROM ghcr.io/cloudnative-pg/postgresql:${PG_BASE_TAG} AS timescaledb-builder
 
 ARG PG_MAJOR
 
@@ -106,7 +111,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # STAGE 4: Final image + assembly
 # Combines all extension artifacts from builder stages into a single, lean image.
 # Only extension binaries and metadata are copied; build dependencies are discarded.
-FROM ghcr.io/cloudnative-pg/postgresql:${PG_MAJOR}-bookworm
+FROM ghcr.io/cloudnative-pg/postgresql:${PG_BASE_TAG}
 
 ARG PG_MAJOR
 
