@@ -10,7 +10,7 @@ ARG PG_MAJOR=17
 # tracking patch releases after 17.6 (cloudnative-pg moved to
 # "X.Y-<variant>-<distro>" tags). "standard" is the documented successor to
 # the old plain tags. Bump this alongside PostgreSQL security releases.
-ARG PG_BASE_TAG=17.11-standard-bookworm
+ARG PG_BASE_TAG=17.11-system-bookworm
 ARG PGVECTOR_VERSION=0.8.6
 ARG PGVECTORSCALE_VERSION=0.9.1
 ARG RUST_VERSION=1.91
