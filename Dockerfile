@@ -175,10 +175,15 @@ COPY --from=timescaledb-builder \
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENV PG_MAJOR=${PG_MAJOR} \
     PGDATA=/var/lib/postgresql/data
+# listen_addresses = '*' in the sample config is what the official image does
+# at build time; the Debian default 'localhost' makes the server unreachable
+# through a published port. CloudNativePG writes its own listen_addresses.
 RUN mkdir -p "${PGDATA}" /var/run/postgresql /docker-entrypoint-initdb.d \
  && chown -R 26:26 /var/lib/postgresql /var/run/postgresql \
  && chmod 0700 "${PGDATA}" \
- && chmod 03775 /var/run/postgresql
+ && chmod 03775 /var/run/postgresql \
+ && sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" "/usr/share/postgresql/${PG_MAJOR}/postgresql.conf.sample" \
+ && grep -F "listen_addresses = '*'" "/usr/share/postgresql/${PG_MAJOR}/postgresql.conf.sample"
 STOPSIGNAL SIGINT
 
 # Switch to CloudNativePG's unprivileged user (UID 26)
