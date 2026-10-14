@@ -165,9 +165,28 @@ COPY --from=timescaledb-builder \
    /usr/share/postgresql/${PG_MAJOR}/extension/timescaledb_toolkit.control \
    /usr/share/postgresql/${PG_MAJOR}/extension/
 
+# Standalone use (docker run, docker compose, CI service containers).
+# The CloudNativePG base images have no docker-entrypoint.sh (only the old
+# floating "17-bookworm" tags were built on the official postgres image), so
+# outside the operator the container would start bash and no database.
+# docker-entrypoint.sh is the official postgres image's script, pinned in
+# this repo. CloudNativePG sets its own container command and PGDATA, which
+# override ENTRYPOINT, CMD and ENV, so clusters are unaffected.
+COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+ENV PG_MAJOR=${PG_MAJOR} \
+    PGDATA=/var/lib/postgresql/data
+RUN mkdir -p "${PGDATA}" /var/run/postgresql /docker-entrypoint-initdb.d \
+ && chown -R 26:26 /var/lib/postgresql /var/run/postgresql \
+ && chmod 0700 "${PGDATA}" \
+ && chmod 03775 /var/run/postgresql
+STOPSIGNAL SIGINT
+
 # Switch to CloudNativePG's unprivileged user (UID 26)
 USER 26
 
 LABEL org.opencontainers.image.title="CloudNativePG TimescaleDB + pgvector + pgvectorscale (Bookworm)"
 LABEL org.opencontainers.image.description="PostgreSQL ${PG_MAJOR} with TimescaleDB, pgvector, and pgvectorscale for AI workloads on Kubernetes"
-LABEL org.opencontainers.image.source="https://github.com/your-org/your-repo"
+LABEL org.opencontainers.image.source="https://github.com/UpBlueio/tigerdata"
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["postgres"]
